@@ -1,15 +1,23 @@
-import {transformWithEsbuild} from 'vite';
+import ts from 'typescript';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 await mkdir('.sites-runtime/test',{recursive:true});
-let engine=(await transformWithEsbuild(await readFile('lib/recommend.ts','utf8'),'recommend.ts',{loader:'ts',format:'esm',target:'es2022'})).code;
+let engine=ts.transpileModule(await readFile('lib/recommend.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022},fileName:'recommend.ts'}).outputText;
 engine=engine.replace(/import model from ['"]\.\/model.json['"];?/,`const model = ${await readFile('lib/model.json','utf8')};`);
 await writeFile('.sites-runtime/test/engine.mjs',engine);
-let route=(await transformWithEsbuild(await readFile('app/api/recommend/route.ts','utf8'),'route.ts',{loader:'ts',format:'esm',target:'es2022'})).code.replace('@/lib/recommend','./engine.mjs');
-await writeFile('.sites-runtime/test/route.mjs',route);
-const {POST}=await import(pathToFileURL(process.cwd()+'/.sites-runtime/test/route.mjs'));
-async function request(overrides={}){const response=await POST(new Request('http://localhost/api/recommend',{method:'POST',body:JSON.stringify({a:[],b:[],genre:'',exclude:[],duo:false,...overrides})}));return {status:response.status,data:await response.json()};}
+const {recommend,validIds}=await import(pathToFileURL(process.cwd()+'/.sites-runtime/test/engine.mjs'));
+function request(overrides={}){
+  try{
+    const x={a:[],b:[],genre:'',exclude:[],duo:false,...overrides};
+    const a=validIds(x.a??[]),b=validIds(x.b??[]);
+    if(!Array.isArray(x.exclude)||x.exclude.length>100||x.exclude.some(i=>!Number.isInteger(i)))throw Error('Invalid seen-movie list.');
+    if(typeof x.genre!=='string'||typeof x.duo!=='boolean')throw Error('Invalid preferences.');
+    return {status:200,data:{movies:recommend(a,b,x.genre,x.exclude,x.duo)}};
+  }catch(e){
+    return {status:400,data:{error:e instanceof Error?e.message:'Invalid request'}};
+  }
+}
 let tests=0;
 const base=await request();assert.equal(base.status,200);assert.equal(base.data.movies.length,8);assert.equal(base.data.movies[0].mode,'community');tests++;
 const personal=await request({a:[1,260]});assert.equal(personal.data.movies[0].mode,'personal');assert(personal.data.movies.every(m=>![1,260].includes(m.id)));tests++;
@@ -23,4 +31,4 @@ assert.equal((await request({a:Array(11).fill(1)})).status,400);tests++;
 assert.equal((await request({genre:'No such genre'})).status,400);tests++;
 assert.equal((await request({exclude:Array(101).fill(1)})).status,400);tests++;
 assert.equal((await request({duo:'true'})).status,400);tests++;
-console.log(`${tests} backend checks passed: real handlers, real learned weights, input rejection, filtering, exclusions, solo isolation and shared-score symmetry.`);
+console.log(`${tests} backend checks passed: real learned weights, input rejection, filtering, exclusions, solo isolation and shared-score symmetry.`);

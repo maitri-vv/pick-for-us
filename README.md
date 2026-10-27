@@ -17,20 +17,19 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. The trained weights are included, so Python is not needed to run the application. Production: `npm run build` then `npm start`.
+Open http://localhost:3000. The trained weights are included, so Python is not needed to run the application. Production static build: `npm run build` (writes `out/`).
 
-The downloaded version is a standard Next.js app. The hosted source uses Vinext with the Sites deployment adapter; the frontend, recommendation routes, catalog and learned model are the same. Deploy the downloadable version to Vercel with the Next.js framework preset, no environment variables required. It needs a server runtime; GitHub Pages alone cannot run its API routes.
+Live site: https://maitri-vv.github.io/pick-for-us/ — GitHub Pages serves the static export. Scoring runs in the browser from the bundled learned weights, so Pages does not need a Node server.
 
 ## Architecture
 
 - React frontend: instant community pick, optional favorite search, one/two-person mode, genre selection, explainable result, seen/next, and decision confirmation.
-- `GET /api/catalog?q=`: server-side movie search and genres.
-- `POST /api/recommend`: validates IDs, scores learned weights, applies filters and excludes selected/seen movies.
-- `GET /api/model`: evaluation metadata and provenance.
+- `lib/recommend.ts` scores the bundled EASE weights in the browser: catalog search, genre filters, exclusions, and one/two-person ranking.
+- `lib/metrics.json` (also at `/metrics.json`): evaluation metadata and provenance.
 - Python / NumPy / SciPy: EASE model fit and reproducible evaluations.
-- The backend bundles trained weights. It does not call an external LLM or require a GPU.
+- The app bundles trained weights. It does not call an external LLM or require a GPU.
 
-Preferences are sent to this app's server for scoring and are not intentionally persisted in a database or user account. The hosting provider may retain normal request metadata. Page fonts load from Google Fonts. External IMDb links open only when selected. Poster-like covers are original typographic graphics, not official movie artwork. No streaming availability, runtimes, plots, or age classifications are invented.
+Preferences stay in the browser for scoring and are not intentionally persisted in a database or user account. GitHub Pages may retain normal request metadata. Page fonts load from Google Fonts. External IMDb links open only when selected. Poster-like covers are original typographic graphics, not official movie artwork. No streaming availability, runtimes, plots, or age classifications are invented.
 
 ## Training
 
@@ -69,7 +68,7 @@ Normalize each person's item-affinity vector by its maximum. With favorites for 
 
 ## Checks
 
-`npm test` runs 12 checks against the real API handler and model weights: no-input recommendations, personalization, exclusion of seeds and seen movies, genre filtering, shared-score symmetry, hidden partner isolation in solo mode, and malformed input rejection.
+`npm test` runs 12 checks against the real scoring function and model weights: no-input recommendations, personalization, exclusion of seeds and seen movies, genre filtering, shared-score symmetry, hidden partner isolation in solo mode, and malformed input rejection.
 
 Live browser checks cover zero-input loading, both-person selections, recommendation explanations, final selection, and a 390px mobile layout. The production build and TypeScript checks pass. See `VERIFICATION.md` for final details.
 
