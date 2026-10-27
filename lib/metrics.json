@@ -1,0 +1,35 @@
+{
+  "dataset": "MovieLens latest-small (September 2018 snapshot)",
+  "ratings": 100836,
+  "users": 610,
+  "source_movies": 9742,
+  "catalog_movies": 1859,
+  "train_ratings": 80896,
+  "heldout_ratings": 19940,
+  "evaluated_users": 573,
+  "relevant_test_items": 6489,
+  "model_recall_at_10": 0.1103,
+  "popularity_recall_at_10": 0.06097,
+  "model_ndcg_at_10": 0.12488,
+  "popularity_ndcg_at_10": 0.08299,
+  "fit_seconds": 0.44,
+  "split": "Latest 20% per user by rating timestamp; ties broken by movie ID. Item eligibility and popularity computed only from training data. Positive = rating >=4. At least 3 training positives and 1 eligible test positive.",
+  "evaluation": "All eligible unseen items; no sampled negatives. Evaluate sparse positive top-80 model with the complete training-positive profile. This does not evaluate new users with 1\u20135 picks, group fairness, genre filters or shuffle.",
+  "source_sha256": {
+    "ratings.csv": "80da8b3393dae325bbba5a31f291a6ba55d8d4f4396de3c456f2c1635b1b70e8",
+    "movies.csv": "c47b783f23eb304413307e1bb05335e427737da20ec8d3c0e96335567dd5f3dc",
+    "links.csv": "028a4a1d17751ca9276e0e0718cfc22356350f224a996e1ec348c23274b9209d"
+  },
+  "limitations": [
+    "Historical catalog through 2018, skewed toward English-language films and MovieLens participants.",
+    "Per-user temporal split is not a single global time cutoff; cross-user information can come from later timestamps.",
+    "Offline ratings metrics do not establish real-world satisfaction or reduced decision time.",
+    "This is a development snapshot experiment, not a standardized benchmark or state-of-the-art claim."
+  ],
+  "five_like_evaluation": {
+    "users": 563,
+    "model_recall_at_10": 0.09822,
+    "quality_baseline_recall_at_10": 0.04845,
+    "protocol": "Use last five eligible training likes per user, production 0.9 normalized affinity + 0.1 quality ranking; exclude all training-seen movies. Same held-out latest-20% split. Does not represent real new-user satisfaction."
+  }
+}
